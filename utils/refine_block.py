@@ -29,11 +29,12 @@ class RefineDecoder(nn.Module):
                  graph_output_dim,
                  alpha=0.2,
                  dropout=0.3,
-                 nhead=4):
+                 nhead=4,
+                 window = 2):
         super().__init__()
         self.block_list = nn.ModuleList([
             RefineBlock(hidden_size, intent_num, slot_num, graph_hidden_dim,
-                        graph_output_dim, alpha = alpha , dropout = dropout, nhead=nhead) for _ in range(block_num)
+                        graph_output_dim, alpha = alpha , dropout = dropout, nhead=nhead, window=window) for _ in range(block_num)
         ])
 
     # self, hiddens, seq_lens, intent_pro =None, slot_pro = None, is_flat = False, force_intent = None, force_slot = None
@@ -82,7 +83,8 @@ class RefineBlock(nn.Module):
                  graph_output_dim,
                  alpha=0.2,
                  dropout=0.3,
-                 nhead=8):
+                 nhead=8,
+                 window=2):
         super().__init__()
         self.hidden_size = hidden_size
         self.intent_num = intent_num
@@ -94,7 +96,7 @@ class RefineBlock(nn.Module):
         self.slot_embedding = nn.Parameter(
             torch.FloatTensor(self.slot_num, self.hidden_size))
         nn.init.normal_(self.slot_embedding.data)
-
+        self.window = window
         # self.BI_gat = GAT(hidden_size, graph_hidden_dim, graph_output_dim, dropout, alpha, nhead)
         # self.O_gat = GAT(hidden_size, graph_hidden_dim, graph_output_dim, dropout, alpha, nhead)
         self.gat = GAT(hidden_size, graph_hidden_dim, graph_output_dim,
@@ -185,8 +187,7 @@ class RefineBlock(nn.Module):
                    adj_node_num,
                    slot_num,
                    intent_num,
-                   seq_len,
-                   window=2):
+                   seq_len):
         """
             Intent_idx: Top3的index batch_size, 3
             Slot_idx: Top3的index batch_size, seq_len, 3
@@ -218,72 +219,71 @@ class RefineBlock(nn.Module):
                
         for i in range(batch_size):
             for j in range(seq_len):
-                adj[i, j, max(0, j - window):j + window + 1] = 1.0  # word2word 
+                adj[i, j, max(0, j - self.window):j + self.window + 1] = 1.0  # word2word 
 
         return normalize_adj(adj)
 
-    def create_neg_adj(self,
-                       intent_idx,
-                       slot_idx,
-                       batch_size,
-                       adj_node_num,
-                       slot_num,
-                       intent_num,
-                       seq_len,
-                       window=2):
-        adj = torch.cat(
-            [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
+    # def create_neg_adj(self,
+    #                    intent_idx,
+    #                    slot_idx,
+    #                    batch_size,
+    #                    adj_node_num,
+    #                    slot_num,
+    #                    intent_num,
+    #                    seq_len):
+    #     adj = torch.cat(
+    #         [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
 
-        for batch_idx in range(batch_size):
-            for j in intent_idx[batch_idx]:
-                adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
-                adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
+    #     for batch_idx in range(batch_size):
+    #         for j in intent_idx[batch_idx]:
+    #             adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
+    #             adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
 
-                adj[batch_idx, j + seq_len, seq_len + intent_num +
-                    slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
+    #             adj[batch_idx, j + seq_len, seq_len + intent_num +
+    #                 slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
 
-            for j in slot_idx[batch_idx]:
-                adj[batch_idx,
-                    j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
-                adj[batch_idx, :seq_len,
-                    j + seq_len + intent_num] = 1.0  # Word2Slot
-                adj[batch_idx, j + seq_len + intent_num,
-                    seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
+    #         for j in slot_idx[batch_idx]:
+    #             adj[batch_idx,
+    #                 j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
+    #             adj[batch_idx, :seq_len,
+    #                 j + seq_len + intent_num] = 1.0  # Word2Slot
+    #             adj[batch_idx, j + seq_len + intent_num,
+    #                 seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
 
-        for i in range(batch_size):
-            for j in range(seq_len):
-                adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
-        return None
+    #     for i in range(batch_size):
+    #         for j in range(seq_len):
+    #             adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
+    #     return None
 
-    def create_pos_adj(self,
-                       intent_idx,
-                       slot_idx,
-                       batch_size,
-                       adj_node_num,
-                       slot_num,
-                       intent_num,
-                       seq_len,
-                       window=2):
-        adj = torch.cat(
-            [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
+    # def create_pos_adj(self,
+    #                    intent_idx,
+    #                    slot_idx,
+    #                    batch_size,
+    #                    adj_node_num,
+    #                    slot_num,
+    #                    intent_num,
+    #                    seq_len,
+    #                    window=2):
+    #     adj = torch.cat(
+    #         [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
 
-        for batch_idx in range(batch_size):
-            for j in intent_idx[batch_idx]:
-                adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
-                adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
+    #     for batch_idx in range(batch_size):
+    #         for j in intent_idx[batch_idx]:
+    #             adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
+    #             adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
 
-                adj[batch_idx, j + seq_len, seq_len + intent_num +
-                    slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
+    #             adj[batch_idx, j + seq_len, seq_len + intent_num +
+    #                 slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
 
-            for j in slot_idx[batch_idx]:
-                adj[batch_idx,
-                    j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
-                adj[batch_idx, :seq_len,
-                    j + seq_len + intent_num] = 1.0  # Word2Slot
-                adj[batch_idx, j + seq_len + intent_num,
-                    seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
+    #         for j in slot_idx[batch_idx]:
+    #             adj[batch_idx,
+    #                 j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
+    #             adj[batch_idx, :seq_len,
+    #                 j + seq_len + intent_num] = 1.0  # Word2Slot
+    #             adj[batch_idx, j + seq_len + intent_num,
+    #                 seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
 
-        for i in range(batch_size):
-            for j in range(seq_len):
-                adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
-        return None
+    #     for i in range(batch_size):
+    #         for j in range(seq_len):
+    #             adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
+    #     return None

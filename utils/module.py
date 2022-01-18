@@ -100,7 +100,8 @@ class ModelManager(nn.Module):
                                    num_intent,
                                    num_slot,
                                    graph_hidden_dim=128,
-                                   graph_output_dim=hidden_size)
+                                   graph_output_dim=hidden_size,
+                                   window= args.window)
 
     def show_summary(self):
         """

@@ -25,6 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--self_loop', '-sl', type=int, default=1) # how many times refine. 
 parser.add_argument('--block_num', '-bkn', type=int, default=1) # refine block number We find that 1 is enough.
 parser.add_argument('--topk', type=int, default=3)
+parser.add_argument('--window', type=int, default=2)
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--stage_one_weight', type=float, default=1.0) # Sometimes model will be influent more by stage one than stage two which is not we want.
 parser.add_argument('--share_decoder', "-srd",action="store_true", default=False) # For saving GPU memory and reduce trainning time you can use share decoder.
