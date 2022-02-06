@@ -26,7 +26,7 @@ from utils import miulab
 
 class Processor(object):
 
-    def __init__(self, dataset, model, batch_size, topk = 3, stage_one_weight = 1.0):
+    def __init__(self, dataset, model, batch_size, topk = 3, stage_one_weight = 0.5):
         self.__dataset = dataset
         self.__model = model
         self.__batch_size = batch_size
@@ -89,7 +89,8 @@ class Processor(object):
                 intent_loss = self.__criterion(intent_out, intent_var)
                 refien_intent_loss = self.__criterion(intent_refine_out, intent_var)
                 mse_loss = self.__criterion_mse(pos_hidden, hidden)
-
+                if epoch == 50:
+                    self.stage_one_weight = 0.0 
                 batch_loss = self.stage_one_weight *(slot_loss + intent_loss) + refine_slot_loss + refien_intent_loss + mse_loss
 
                 self.__optimizer.zero_grad()
