@@ -124,6 +124,8 @@ class Processor(object):
                 
                 print('\nTest result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
                       'semantic accuracy score: {:.6f}.'.format(test_f1, test_acc, test_sent_acc))
+                print('\nTest Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                      'semantic accuracy score: {:.6f}.'.format(test_f1_origin, test_acc_origin, test_sent_acc_origin))
 
                 model_save_dir = os.path.join(self.__dataset.save_dir, "model")
                 if not os.path.exists(model_save_dir):

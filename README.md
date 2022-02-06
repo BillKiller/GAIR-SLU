@@ -33,7 +33,7 @@ paper, We suggest you the following hyper-parameter setting for CAIS dataset:
 
 Similarly, for SMP dataset, you can also consider the following command: 
 
-        python train.py -wed 256 -ehd 256 -aod 128  -dd=data/smp/ --topk 3
+        python train.py -wed 256 -ehd 256 -aod 128  -dd=data/smp/ --topk 3 
 
 
 ## How to Test it
