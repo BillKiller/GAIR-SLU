@@ -102,7 +102,7 @@ class Processor(object):
                                                       intent_var)
                 mse_loss = self.__criterion_mse(pos_hidden, hidden)
                 if epoch % 50 == 0:
-                    self.stage_one_weight = min(0.5,
+                    self.stage_one_weight = max(0.5,
                                                 self.stage_one_weight - 0.2)
                 batch_loss = self.stage_one_weight * (
                     slot_loss + intent_loss
