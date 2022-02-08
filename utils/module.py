@@ -182,10 +182,10 @@ class ModelManager(nn.Module):
         refine_pred_slot = self.__refine_slot_decoder(hiddens,
                                                       seq_lens,
                                                       forced_input=forced_slot,
-                                                      extra_input=feed_intent)
+                                                      extra_input=feed_intent) + pred_slot
 
         refine_pred_intent = self.__refine_intent_decoder(
-            hiddens, seq_lens, forced_input=forced_intent)
+            hiddens, seq_lens, forced_input=forced_intent) + pred_intent
 
         # refine_pred_intent = matrix2flat(refine_pred_intent,seq_lens)
 
