@@ -126,7 +126,7 @@ class Processor(object):
             change, time_start = False, time.time()
             dev_f1_score, dev_acc, dev_sent_acc, dev_f1_origin, dev_acc_origin, dev_sent_acc_origin = self.estimate(
                 if_dev=True, test_batch=self.__batch_size)
-
+            
             if dev_f1_score > best_dev_slot or dev_acc > best_dev_intent or dev_sent_acc > best_dev_sent:
                 test_f1, test_acc, test_sent_acc, test_f1_origin, test_acc_origin, test_sent_acc_origin = self.estimate(
                     if_dev=False, test_batch=self.__batch_size)
@@ -211,7 +211,7 @@ class Processor(object):
         # Get the sentence list in test dataset.
         sent_list = dataset.test_sentence
 
-        pred_slot, _, real_slot, exp_pred_intent, pred_intent, real_intent = Processor.prediction(
+        pred_refine_slot, pred_slot, real_slot, pred_refine_intent, pred_intent, real_intent = Processor.prediction(
             model, dataset, "test", batch_size, topk=topk, self_loop=self_loop)
 
         # To make sure the directory for save error prediction.
@@ -226,7 +226,7 @@ class Processor(object):
         # Write those sample with mistaken slot prediction.
         with open(slot_file_path, 'w') as fw:
             for w_list, r_slot_list, p_slot_list in zip(
-                    sent_list, real_slot, pred_slot):
+                    sent_list, real_slot, pred_refine_slot):
                 if r_slot_list != p_slot_list:
                     for w, r, p in zip(w_list, r_slot_list, p_slot_list):
                         fw.write(w + '\t' + r + '\t' + p + '\n')
@@ -235,7 +235,7 @@ class Processor(object):
         # Write those sample with mistaken intent prediction.
         with open(intent_file_path, 'w') as fw:
             for w_list, p_intent_list, r_intent, p_intent in zip(
-                    sent_list, pred_intent, real_intent, exp_pred_intent):
+                    sent_list, pred_intent, real_intent, pred_refine_intent):
                 if p_intent != r_intent:
                     for w, p in zip(w_list, p_intent_list):
                         fw.write(w + '\t' + p + '\n')
@@ -244,7 +244,7 @@ class Processor(object):
         # Write those sample both have intent and slot errors.
         with open(both_file_path, 'w') as fw:
             for w_list, r_slot_list, p_slot_list, p_intent_list, r_intent, p_intent in \
-                    zip(sent_list, real_slot, pred_slot, pred_intent, real_intent, exp_pred_intent):
+                    zip(sent_list, real_slot, pred_refine_slot, pred_intent, real_intent, pred_refine_intent):
 
                 if r_slot_list != p_slot_list or r_intent != p_intent:
                     for w, r_slot, p_slot, p_intent_ in zip(
@@ -254,11 +254,18 @@ class Processor(object):
                     fw.write(r_intent + '\t' + p_intent + '\n\n')
 
         slot_f1 = miulab.computeF1Score(pred_slot, real_slot)[0]
-        intent_acc = Evaluator.accuracy(exp_pred_intent, real_intent)
-        sent_acc = Evaluator.semantic_acc(pred_slot, real_slot,
-                                          exp_pred_intent, real_intent)
+        refine_slot_f1 = miulab.computeF1Score(pred_refine_slot, real_slot)[0]
 
-        return slot_f1, intent_acc, sent_acc
+        intent_acc = Evaluator.accuracy(pred_intent, real_intent)
+        refine_intent_acc = Evaluator.accuracy(pred_refine_intent, real_intent)
+
+        sent_acc = Evaluator.semantic_acc(pred_slot, real_slot, pred_intent,
+                                          real_intent)
+        refine_sent_acc = Evaluator.semantic_acc(pred_refine_slot, real_slot,
+                                                 pred_refine_intent,
+                                                 real_intent)
+
+        return refine_slot_f1, refine_intent_acc, refine_sent_acc, slot_f1, intent_acc, sent_acc
 
     @staticmethod
     def prediction(model, dataset, mode, batch_size, topk=3, self_loop=1):

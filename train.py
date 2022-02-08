@@ -102,8 +102,16 @@ if __name__ == "__main__":
         print(model)
         process.train()
 
-    print('\nAccepted performance: ' + str(
-        Processor.validate(os.path.join(args.save_dir, "model/model.pkl"),
+    print('\nAccepted performance: ')
+    test_f1, test_acc, test_sent_acc, test_f1_origin, test_acc_origin, test_sent_acc_origin =  Processor.validate(os.path.join(args.save_dir, "model/model.pkl"),
                            os.path.join(args.save_dir, "model/dataset.pkl"),
-                           args.batch_size, args.topk, args.self_loop)) +
-          " at test dataset;\n")
+                           args.batch_size, args.topk, args.self_loop)
+    print(
+                    '\nTest result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'semantic accuracy score: {:.6f}.'.format(
+                        test_f1, test_acc, test_sent_acc))
+    print(
+                    '\nTest Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'semantic accuracy score: {:.6f}.'.format(
+                        test_f1_origin, test_acc_origin, test_sent_acc_origin))
+ 
