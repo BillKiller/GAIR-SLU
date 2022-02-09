@@ -126,7 +126,14 @@ class Processor(object):
             change, time_start = False, time.time()
             dev_f1_score, dev_acc, dev_sent_acc, dev_f1_origin, dev_acc_origin, dev_sent_acc_origin = self.estimate(
                 if_dev=True, test_batch=self.__batch_size)
-            
+            print(
+                    'Dev result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'semantic accuracy score: {:.6f}.'.format(
+                        dev_f1_score, dev_acc, dev_sent_acc))
+            print(
+                    'Dev Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'semantic accuracy score: {:.6f}.'.format(
+                        dev_f1_origin, dev_acc_origin, dev_sent_acc_origin))
             if dev_f1_score > best_dev_slot or dev_acc > best_dev_intent or dev_sent_acc > best_dev_sent:
                 test_f1, test_acc, test_sent_acc, test_f1_origin, test_acc_origin, test_sent_acc_origin = self.estimate(
                     if_dev=False, test_batch=self.__batch_size)
@@ -138,12 +145,14 @@ class Processor(object):
                 if dev_sent_acc > best_dev_sent:
                     best_dev_sent = dev_sent_acc
 
+
+
                 print(
-                    '\nTest result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'Test result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
                     'semantic accuracy score: {:.6f}.'.format(
                         test_f1, test_acc, test_sent_acc))
                 print(
-                    '\nTest Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                    'Test Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
                     'semantic accuracy score: {:.6f}.'.format(
                         test_f1_origin, test_acc_origin, test_sent_acc_origin))
 
