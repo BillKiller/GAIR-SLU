@@ -38,12 +38,12 @@ parser.add_argument('--batch_size', '-bs', type=int, default=2)
 parser.add_argument('--l2_penalty', '-lp', type=float, default=1e-6)
 parser.add_argument("--learning_rate", '-lr', type=float, default=0.001)
 parser.add_argument('--dropout_rate', '-dr', type=float, default=0.4)
-parser.add_argument('--intent_forcing_rate', '-ifr', type=float, default=0.9)
+parser.add_argument('--intent_forcing_rate', '-ifr', type=float, default=1.0)
 parser.add_argument("--differentiable",
                     "-d",
                     action="store_true",
                     default=False)
-parser.add_argument('--slot_forcing_rate', '-sfr', type=float, default=0.9)
+parser.add_argument('--slot_forcing_rate', '-sfr', type=float, default=1.0)
 
 # model parameters.
 parser.add_argument('--word_embedding_dim', '-wed', type=int, default=64)
