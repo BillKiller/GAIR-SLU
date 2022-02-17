@@ -122,18 +122,14 @@ class Processor(object):
                   'about {:2.6} seconds.'.format(epoch, total_slot_loss, total_intent_loss, time_con))
 
             change, time_start = False, time.time()
-            dev_f1_score, dev_acc, dev_sent_acc, dev_f1_origin, dev_acc_origin, dev_sent_acc_origin = self.estimate(
+            dev_f1_score, dev_acc, dev_sent_acc = self.estimate(
                 if_dev=True, test_batch=self.__batch_size)
-            print(
-                    'Dev result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+            print('Dev result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
                     'semantic accuracy score: {:.6f}.'.format(
                         dev_f1_score, dev_acc, dev_sent_acc))
-            print(
-                    'Dev Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
-                    'semantic accuracy score: {:.6f}.'.format(
-                        dev_f1_origin, dev_acc_origin, dev_sent_acc_origin))
+
             if dev_f1_score > best_dev_slot or dev_acc > best_dev_intent or dev_sent_acc > best_dev_sent:
-                test_f1, test_acc, test_sent_acc, test_f1_origin, test_acc_origin, test_sent_acc_origin = self.estimate(
+                test_f1, test_acc, test_sent_acc = self.estimate(
                     if_dev=False, test_batch=self.__batch_size)
 
                 if dev_f1_score > best_dev_slot:
@@ -144,15 +140,9 @@ class Processor(object):
                     best_dev_sent = dev_sent_acc
 
 
-
-                print(
-                    'Test result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
+                print('Test result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
                     'semantic accuracy score: {:.6f}.'.format(
                         test_f1, test_acc, test_sent_acc))
-                print(
-                    'Test Origin Result: slot f1 score: {:.6f}, intent acc score: {:.6f}, '
-                    'semantic accuracy score: {:.6f}.'.format(
-                        test_f1_origin, test_acc_origin, test_sent_acc_origin))
 
                 model_save_dir = os.path.join(self.__dataset.save_dir, "model")
                 if not os.path.exists(model_save_dir):
@@ -174,37 +164,33 @@ class Processor(object):
         """
 
         if if_dev:
-            pref_refine_slot, pred_slot, real_slot, pred_refine_intent, pred_intent, real_intent = self.prediction(
+            pref_refine_slot, real_slot, pred_refine_intent, real_intent = self.prediction(
                 self.__model,
                 self.__dataset,
                 "dev",
                 test_batch,
                 topk=self.topk)
         else:
-            pref_refine_slot, pred_slot, real_slot, pred_refine_intent, pred_intent, real_intent = self.prediction(
+            pref_refine_slot, real_slot, pred_refine_intent, real_intent = self.prediction(
                 self.__model,
                 self.__dataset,
                 "test",
                 test_batch,
                 topk=self.topk)
 
-        # slot_f1_socre = miulab.computeF1Score(pred_slot, real_slot)[0]
-        # intent_acc = Evaluator.accuracy(pred_intent, real_intent)
-        # sent_acc = Evaluator.semantic_acc(pred_slot, real_slot, pred_intent, real_intent)
 
-        slot_f1 = miulab.computeF1Score(pred_slot, real_slot)[0]
+
         refine_slot_f1 = miulab.computeF1Score(pref_refine_slot, real_slot)[0]
 
-        intent_acc = Evaluator.accuracy(pred_intent, real_intent)
+
         refine_intent_acc = Evaluator.accuracy(pred_refine_intent, real_intent)
 
-        sent_acc = Evaluator.semantic_acc(pred_slot, real_slot, pred_intent,
-                                          real_intent)
+
         refine_sent_acc = Evaluator.semantic_acc(pref_refine_slot, real_slot,
                                                  pred_refine_intent,
                                                  real_intent)
 
-        return refine_slot_f1, refine_intent_acc, refine_sent_acc, slot_f1, intent_acc, sent_acc
+        return refine_slot_f1, refine_intent_acc, refine_sent_acc
 
     @staticmethod
     def validate(model_path, dataset_path, batch_size, topk=3, self_loop=1):
@@ -218,7 +204,7 @@ class Processor(object):
         # Get the sentence list in test dataset.
         sent_list = dataset.test_sentence
 
-        pred_refine_slot, pred_slot, real_slot, pred_refine_intent, pred_intent, real_intent = Processor.prediction(
+        pred_refine_slot, real_slot, pred_refine_intent, real_intent = Processor.prediction(
             model, dataset, "test", batch_size, topk=topk, self_loop=self_loop)
 
         # To make sure the directory for save error prediction.
@@ -226,53 +212,32 @@ class Processor(object):
         if not os.path.exists(mistake_dir):
             os.mkdir(mistake_dir)
 
-        slot_file_path = os.path.join(mistake_dir, "slot.txt")
-        intent_file_path = os.path.join(mistake_dir, "intent.txt")
-        both_file_path = os.path.join(mistake_dir, "both.txt")
+        # slot_file_path = os.path.join(mistake_dir, "slot.txt")
+        # intent_file_path = os.path.join(mistake_dir, "intent.txt")
+        # both_file_path = os.path.join(mistake_dir, "both.txt")
 
-        # Write those sample with mistaken slot prediction.
-        with open(slot_file_path, 'w') as fw:
-            for w_list, r_slot_list, p_slot_list in zip(
-                    sent_list, real_slot, pred_refine_slot):
-                if r_slot_list != p_slot_list:
-                    for w, r, p in zip(w_list, r_slot_list, p_slot_list):
-                        fw.write(w + '\t' + r + '\t' + p + '\n')
-                    fw.write('\n')
+        # # Write those sample with mistaken slot prediction.
+        # with open(slot_file_path, 'w') as fw:
+        #     for w_list, r_slot_list, p_slot_list in zip(
+        #             sent_list, real_slot, pred_refine_slot):
+        #         if r_slot_list != p_slot_list:
+        #             for w, r, p in zip(w_list, r_slot_list, p_slot_list):
+        #                 fw.write(w + '\t' + r + '\t' + p + '\n')
+        #             fw.write('\n')
 
-        # Write those sample with mistaken intent prediction.
-        with open(intent_file_path, 'w') as fw:
-            for w_list, p_intent_list, r_intent, p_intent in zip(
-                    sent_list, pred_intent, real_intent, pred_refine_intent):
-                if p_intent != r_intent:
-                    for w, p in zip(w_list, p_intent_list):
-                        fw.write(w + '\t' + p + '\n')
-                    fw.write(r_intent + '\t' + p_intent + '\n\n')
 
-        # Write those sample both have intent and slot errors.
-        with open(both_file_path, 'w') as fw:
-            for w_list, r_slot_list, p_slot_list, p_intent_list, r_intent, p_intent in \
-                    zip(sent_list, real_slot, pred_refine_slot, pred_intent, real_intent, pred_refine_intent):
 
-                if r_slot_list != p_slot_list or r_intent != p_intent:
-                    for w, r_slot, p_slot, p_intent_ in zip(
-                            w_list, r_slot_list, p_slot_list, p_intent_list):
-                        fw.write(w + '\t' + r_slot + '\t' + p_slot + '\t' +
-                                 p_intent_ + '\n')
-                    fw.write(r_intent + '\t' + p_intent + '\n\n')
-
-        slot_f1 = miulab.computeF1Score(pred_slot, real_slot)[0]
         refine_slot_f1 = miulab.computeF1Score(pred_refine_slot, real_slot)[0]
 
-        intent_acc = Evaluator.accuracy(pred_intent, real_intent)
+
         refine_intent_acc = Evaluator.accuracy(pred_refine_intent, real_intent)
 
-        sent_acc = Evaluator.semantic_acc(pred_slot, real_slot, pred_intent,
-                                          real_intent)
+
         refine_sent_acc = Evaluator.semantic_acc(pred_refine_slot, real_slot,
                                                  pred_refine_intent,
                                                  real_intent)
 
-        return refine_slot_f1, refine_intent_acc, refine_sent_acc, slot_f1, intent_acc, sent_acc
+        return refine_slot_f1, refine_intent_acc, refine_sent_acc
 
     @staticmethod
     def prediction(model, dataset, mode, batch_size, topk=3, self_loop=1):
@@ -292,8 +257,8 @@ class Processor(object):
             raise Exception(
                 "Argument error! mode belongs to {\"dev\", \"test\"}.")
 
-        pred_slot, real_slot = [], []
-        pred_intent, real_intent = [], []
+        real_slot = []
+        real_intent = []
         pred_refine_intent = []
         pred_refine_slot = []
 
@@ -344,7 +309,7 @@ class Processor(object):
                 nested_slot = tmp_r_slot
                 refine_nested_slot = refine_tmp_r_slot
 
-            pred_slot.extend(dataset.slot_alphabet.get_instance(nested_slot))
+
             pred_refine_slot.extend(
                 dataset.slot_alphabet.get_instance(refine_nested_slot))
             nested_intent = Evaluator.nested_list(
@@ -362,15 +327,13 @@ class Processor(object):
                 nested_intent = tmp_intent
                 refine_nested_intent = refine_tmp_intent
 
-            pred_intent.extend(
-                dataset.intent_alphabet.get_instance(nested_intent))
+
             pred_refine_intent.extend(
                 dataset.intent_alphabet.get_instance(refine_nested_intent))
 
-        exp_pred_intent = Evaluator.max_freq_predict(pred_intent)
-        refien_exp_pred_intent = Evaluator.max_freq_predict(pred_refine_intent)
+        refine_exp_pred_intent = Evaluator.max_freq_predict(pred_refine_intent)
 
-        return pred_refine_slot, pred_slot, real_slot, refien_exp_pred_intent, exp_pred_intent, real_intent,
+        return pred_refine_slot, real_slot, refine_exp_pred_intent, real_intent,
 
 
 class Evaluator(object):
