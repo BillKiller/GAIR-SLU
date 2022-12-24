@@ -29,11 +29,11 @@ We highly suggest you using [Anaconda](https://www.anaconda.com) to manage your 
 The script **train.py** acts as a main function to the project. For reproducing the results reported in our
 paper, We suggest you the following hyper-parameter setting for CAIS dataset:
 
-        python train.py -wed 64 -ehd 256 -aod 128 -dd=data/cais/  --topk 5
+        python train.py -wed 64 -ehd 256 -aod 128 -dd=data/cais/  --topk 5 -bs 16
 
 Similarly, for SMP dataset, you can also consider the following command: 
 
-        python train.py -wed 256 -ehd 256 -aod 128  -dd=data/smp/ --topk 3 
+        python train.py -wed 256 -ehd 256 -aod 128  -dd=data/smp/ --topk 3  -bs 16
 
 
 ## How to Test it
