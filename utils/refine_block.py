@@ -180,48 +180,48 @@ class RefineBlock(nn.Module):
         return hidden, pos_hidden, intent_pro, slot_pro
 
     # 把选中的intent和所有的hidden连接起来，把选中的intent和所有的hidden连接起来
-    def create_adj(self,
-                   intent_idx,
-                   slot_idx,
-                   batch_size,
-                   adj_node_num,
-                   slot_num,
-                   intent_num,
-                   seq_len):
-        """
-            Intent_idx: Top3的index batch_size, 3
-            Slot_idx: Top3的index batch_size, seq_len, 3
+    # def create_adj(self,
+    #                intent_idx,
+    #                slot_idx,
+    #                batch_size,
+    #                adj_node_num,
+    #                slot_num,
+    #                intent_num,
+    #                seq_len):
+    #     """
+    #         Intent_idx: Top3的index batch_size, 3
+    #         Slot_idx: Top3的index batch_size, seq_len, 3
 
-        """
-        adj = torch.cat(
-            [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
+    #     """
+    #     adj = torch.cat(
+    #         [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
 
-        for batch_idx in range(batch_size):
-            for token_idx in range(seq_len):
-                for s_idx in slot_idx[batch_idx][token_idx]:
-                    adj[batch_idx, seq_len + intent_num + s_idx,
-                        seq_len + intent_idx[batch_idx][token_idx]] = 1.0
-                    adj[batch_idx, seq_len + intent_idx[batch_idx][token_idx],
-                        seq_len + intent_num + s_idx] = 1.0
+    #     for batch_idx in range(batch_size):
+    #         for token_idx in range(seq_len):
+    #             for s_idx in slot_idx[batch_idx][token_idx]:
+    #                 adj[batch_idx, seq_len + intent_num + s_idx,
+    #                     seq_len + intent_idx[batch_idx][token_idx]] = 1.0
+    #                 adj[batch_idx, seq_len + intent_idx[batch_idx][token_idx],
+    #                     seq_len + intent_num + s_idx] = 1.0
 
-                adj[batch_idx, token_idx, seq_len +
-                    intent_idx[batch_idx][token_idx]] = 1.0  # word2Top3Intent
-                adj[batch_idx, seq_len + intent_idx[batch_idx][token_idx],
-                    token_idx] = 1.0  # word2Top3Intent
+    #             adj[batch_idx, token_idx, seq_len +
+    #                 intent_idx[batch_idx][token_idx]] = 1.0  # word2Top3Intent
+    #             adj[batch_idx, seq_len + intent_idx[batch_idx][token_idx],
+    #                 token_idx] = 1.0  # word2Top3Intent
 
-                adj[batch_idx, token_idx, slot_idx[batch_idx][token_idx] +
-                    seq_len + intent_num] = 1.0  # Word2Slot
+    #             adj[batch_idx, token_idx, slot_idx[batch_idx][token_idx] +
+    #                 seq_len + intent_num] = 1.0  # Word2Slot
 
-                adj[batch_idx,
-                    slot_idx[batch_idx][token_idx] + seq_len + intent_num,
-                    token_idx] = 1.0  # Slot2Word
+    #             adj[batch_idx,
+    #                 slot_idx[batch_idx][token_idx] + seq_len + intent_num,
+    #                 token_idx] = 1.0  # Slot2Word
 
                
-        for i in range(batch_size):
-            for j in range(seq_len):
-                adj[i, j, max(0, j - self.window):j + self.window + 1] = 1.0  # word2word 
+    #     for i in range(batch_size):
+    #         for j in range(seq_len):
+    #             adj[i, j, max(0, j - self.window):j + self.window + 1] = 1.0  # word2word 
 
-        return normalize_adj(adj)
+    #     return adj
 
     # def create_neg_adj(self,
     #                    intent_idx,
@@ -255,35 +255,34 @@ class RefineBlock(nn.Module):
     #             adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
     #     return None
 
-    # def create_pos_adj(self,
-    #                    intent_idx,
-    #                    slot_idx,
-    #                    batch_size,
-    #                    adj_node_num,
-    #                    slot_num,
-    #                    intent_num,
-    #                    seq_len,
-    #                    window=2):
-    #     adj = torch.cat(
-    #         [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
+    def create_adj(self,
+                       intent_idx,
+                       slot_idx,
+                       batch_size,
+                       adj_node_num,
+                       slot_num,
+                       intent_num,
+                       seq_len):
+        adj = torch.cat(
+            [torch.eye(adj_node_num).unsqueeze(0) for _ in range(batch_size)])
 
-    #     for batch_idx in range(batch_size):
-    #         for j in intent_idx[batch_idx]:
-    #             adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
-    #             adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
+        for batch_idx in range(batch_size):
+            for j in intent_idx[batch_idx]:
+                adj[batch_idx, j + seq_len, :seq_len] = 1.0  # Top3Intent2Word
+                adj[batch_idx, :seq_len, j + seq_len] = 1.0  # Word2Top3Intent
 
-    #             adj[batch_idx, j + seq_len, seq_len + intent_num +
-    #                 slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
+                adj[batch_idx, j + seq_len, seq_len + intent_num +
+                    slot_idx[batch_idx]] = 1.0  # Top3Intent 2 slot
 
-    #         for j in slot_idx[batch_idx]:
-    #             adj[batch_idx,
-    #                 j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
-    #             adj[batch_idx, :seq_len,
-    #                 j + seq_len + intent_num] = 1.0  # Word2Slot
-    #             adj[batch_idx, j + seq_len + intent_num,
-    #                 seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
+            for j in slot_idx[batch_idx]:
+                adj[batch_idx,
+                    j + seq_len + intent_num, :seq_len] = 1.0  #Slot2Word
+                adj[batch_idx, :seq_len,
+                    j + seq_len + intent_num] = 1.0  # Word2Slot
+                adj[batch_idx, j + seq_len + intent_num,
+                    seq_len + intent_idx[batch_idx]] = 1.0  # Slot2Intent
 
-    #     for i in range(batch_size):
-    #         for j in range(seq_len):
-    #             adj[i, j, max(0, j - window):j + window + 1] = 1.0  # Slot2Slot
-    #     return None
+        for i in range(batch_size):
+            for j in range(seq_len):
+                adj[i, j, max(0, j - self.window):j + self.window + 1] = 1.0  # Slot2Slot
+        return adj

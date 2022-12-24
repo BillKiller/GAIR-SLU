@@ -1,0 +1,13 @@
+PlayMusic	0
+PlayFMCrosstalk	1
+GetWeather	2
+PlayFMJoke	3
+Remind	4
+PlayFMStory	5
+Chat	6
+PlayFMFiction	7
+PlayPoem	8
+GetNews	9
+ControlSystem	10
+AskKnowledge	11
+Sing	12
