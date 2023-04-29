@@ -1,4 +1,4 @@
-!!**邮箱修改说明**：无法使用了，要联系麻烦发送到 zhuzhanbiao@stu.scau.edu.cn
+!!**邮箱修改说明**：原来的邮箱地址无法使用了，要联系麻烦发送到 zhuzhanbiao@stu.scau.edu.cn
 # **GAIR**: A **G**raph **A**ttention **I**nteractive **R**efine framework with contextual regularization for jointing intent detection and slot filling
 
 Our code is based on [StackPropagation]([StackPropagation-SLU](https://github.com/LeePleased/StackPropagation-SLU)). Besides, we use StackPropagation Model as the stage one model, and refine the result by the graph attention interactive refine framework with contextual regularization. 
